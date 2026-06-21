@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50:  '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        sidebar: '#0f172a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        .router-link-exact-active .nav-item {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-left: 3px solid #3b82f6;
+        }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+<div id="app" class="min-h-screen">
+
+    <!-- ===== LAYOUT BELUM LOGIN (Public) ===== -->
+    <template v-if="!isLoggedIn">
+
+        <!-- Wrapper biru menyeluruh -->
+        <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 relative">
+
+            <!-- Dekorasi blur -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <div class="absolute top-10 left-10 w-64 h-64 bg-blue-500 rounded-full blur-3xl opacity-10"></div>
+                <div class="absolute top-0 right-10 w-48 h-48 bg-indigo-400 rounded-full blur-3xl opacity-10"></div>
+            </div>
+
+            <!-- Navbar transparan di atas hero (sembunyikan di halaman login) -->
+            <nav v-if="$route.path !== '/login'" class="relative z-50">
+                <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white text-sm font-bold">E</span>
+                        </div>
+                        <span class="text-white font-semibold text-lg tracking-tight">E-Inventory</span>
+                    </div>
+                    <router-link to="/login"
+                        class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-lg shadow-blue-600/30">
+                        Masuk ke Panel
+                    </router-link>
+                </div>
+            </nav>
+
+            <!-- Konten Public (Home.js di-render di sini, tanpa padding biar nyambung) -->
+            <main>
+                <router-view></router-view>
+            </main>
+
+        </div>
+
+    </template>
+
+    <!-- ===== LAYOUT SUDAH LOGIN (Admin/Staff) ===== -->
+    <template v-else>
+        <div class="flex min-h-screen">
+
+            <!-- SIDEBAR -->
+            <aside class="w-64 bg-sidebar min-h-screen flex flex-col fixed left-0 top-0 z-40">
+
+                <!-- Logo -->
+                <div class="px-6 py-5 border-b border-slate-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <span class="text-white font-bold text-sm">EI</span>
+                        </div>
+                        <div>
+                            <p class="text-white font-semibold text-sm leading-tight">E-Inventory</p>
+                            <p class="text-slate-400 text-xs">Management System</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Info -->
+                <div class="px-6 py-4 border-b border-slate-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-slate-600 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-semibold">{{ userName.charAt(0).toUpperCase() }}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-sm font-medium truncate">{{ userName }}</p>
+                            <span class="inline-block text-xs px-2 py-0.5 rounded-full mt-0.5"
+                                :class="userRole === 'admin' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'">
+                                {{ userRole }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 px-3 py-4 space-y-1">
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-widest px-3 mb-2">Menu Utama</p>
+
+                    <router-link to="/dashboard">
+                        <div class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-150 cursor-pointer text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/>
+                            </svg>
+                            Dashboard
+                        </div>
+                    </router-link>
+
+                    <router-link to="/barang">
+                        <div class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-150 cursor-pointer text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            Data Barang
+                        </div>
+                    </router-link>
+
+                    <router-link to="/kategori">
+                        <div class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-150 cursor-pointer text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                            Kategori
+                        </div>
+                    </router-link>
+
+                    <router-link to="/supplier">
+                        <div class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-150 cursor-pointer text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            Supplier
+                        </div>
+                    </router-link>
+
+                    <router-link to="/histori">
+                        <div class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-150 cursor-pointer text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Histori Barang
+                        </div>
+                    </router-link>
+                </nav>
+
+                <!-- Logout -->
+                <div class="px-3 py-4 border-t border-slate-700">
+                    <button @click="logout"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 text-sm font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        Keluar
+                    </button>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <div class="flex-1 ml-64">
+                <!-- Top Header -->
+                <header class="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-30">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-gray-800 font-semibold text-base">{{ pageTitle }}</h1>
+                            <p class="text-gray-400 text-xs mt-0.5">Sistem Manajemen Inventaris Barang</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span id="clock">--:--:--</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Page Content -->
+                <main class="p-8">
+                    <router-view></router-view>
+                </main>
+            </div>
+
+        </div>
+    </template>
+
+</div>
+
+<!-- Load Komponen -->
+<script src="assets/js/components/Home.js"></script>
+<script src="assets/js/components/Login.js"></script>
+<script src="assets/js/components/Dashboard.js"></script>
+<script src="assets/js/components/Barang.js"></script>
+<script src="assets/js/components/Kategori.js"></script>
+<script src="assets/js/components/Supplier.js"></script>
+<script src="assets/js/components/Histori.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const el = document.getElementById('clock');
+        if (el) el.textContent = now.toLocaleTimeString('id-ID');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
+</body>
+</html>
