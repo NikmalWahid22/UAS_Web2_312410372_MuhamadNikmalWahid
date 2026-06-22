@@ -1,7 +1,7 @@
 const { createApp } = Vue;
 const { createRouter, createWebHashHistory } = VueRouter;
 
-const apiUrl = 'http://localhost:8080';
+const apiUrl = 'https://einventory-nikmal.infinityfree.io/public';
 axios.defaults.baseURL = apiUrl; // Set base URL secara global untuk Axios
 
 // =========================================================================
