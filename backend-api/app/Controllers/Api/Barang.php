@@ -32,6 +32,8 @@ class Barang extends ResourceController
 
     public function create()
     {
+        $input = $this->getRequestInput();
+
         $rules = [
             'nama_barang'  => 'required|min_length[3]|max_length[100]',
             'id_kategori'  => 'required|integer',
@@ -41,12 +43,15 @@ class Barang extends ResourceController
             'satuan'       => 'required|min_length[1]|max_length[20]',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
-        $id_kategori = $this->request->getVar('id_kategori');
-        $id_supplier = $this->request->getVar('id_supplier');
+        $id_kategori = $input['id_kategori'];
+        $id_supplier = $input['id_supplier'];
 
         // Check if category exists
         $kategoriModel = new \App\Models\KategoriModel();
@@ -62,13 +67,13 @@ class Barang extends ResourceController
 
         $model = new BarangModel();
         $data  = [
-            'nama_barang'  => $this->request->getVar('nama_barang'),
+            'nama_barang'  => $input['nama_barang'],
             'id_kategori'  => $id_kategori,
             'id_supplier'  => $id_supplier,
-            'stok'         => $this->request->getVar('stok'),
-            'harga'        => $this->request->getVar('harga'),
-            'satuan'       => $this->request->getVar('satuan'),
-            'deskripsi'    => $this->request->getVar('deskripsi'),
+            'stok'         => $input['stok'],
+            'harga'        => $input['harga'],
+            'satuan'       => $input['satuan'],
+            'deskripsi'    => $input['deskripsi'] ?? null,
         ];
 
         $model->insert($data);
@@ -87,6 +92,8 @@ class Barang extends ResourceController
             return $this->failNotFound('Barang tidak ditemukan.');
         }
 
+        $input = $this->getRequestInput();
+
         $rules = [
             'nama_barang'  => 'required|min_length[3]|max_length[100]',
             'id_kategori'  => 'required|integer',
@@ -96,12 +103,15 @@ class Barang extends ResourceController
             'satuan'       => 'required|min_length[1]|max_length[20]',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
-        $id_kategori = $this->request->getVar('id_kategori');
-        $id_supplier = $this->request->getVar('id_supplier');
+        $id_kategori = $input['id_kategori'];
+        $id_supplier = $input['id_supplier'];
 
         // Check if category exists
         $kategoriModel = new \App\Models\KategoriModel();
@@ -116,13 +126,13 @@ class Barang extends ResourceController
         }
 
         $data  = [
-            'nama_barang'  => $this->request->getVar('nama_barang'),
+            'nama_barang'  => $input['nama_barang'],
             'id_kategori'  => $id_kategori,
             'id_supplier'  => $id_supplier,
-            'stok'         => $this->request->getVar('stok'),
-            'harga'        => $this->request->getVar('harga'),
-            'satuan'       => $this->request->getVar('satuan'),
-            'deskripsi'    => $this->request->getVar('deskripsi'),
+            'stok'         => $input['stok'],
+            'harga'        => $input['harga'],
+            'satuan'       => $input['satuan'],
+            'deskripsi'    => $input['deskripsi'] ?? null,
         ];
 
         $model->update($id, $data);
@@ -147,5 +157,25 @@ class Barang extends ResourceController
             'status'   => 200,
             'messages' => 'Barang berhasil dihapus.'
         ]);
+    }
+
+    protected function getRequestInput()
+    {
+        $input = [];
+        $contentType = $this->request->getHeaderLine('Content-Type');
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawBody = $this->request->getBody();
+            if (!empty($rawBody)) {
+                $json = json_decode($rawBody, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                    $input = $json;
+                }
+            }
+        }
+        return array_merge(
+            $this->request->getGet() ?? [],
+            $this->request->getPost() ?? [],
+            $input
+        );
     }
 }

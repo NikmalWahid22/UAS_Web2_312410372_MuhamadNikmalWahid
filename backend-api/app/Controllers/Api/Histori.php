@@ -21,6 +21,8 @@ class Histori extends ResourceController
 
     public function create()
     {
+        $input = $this->getRequestInput();
+
         $rules = [
             'id_barang'  => 'required|integer',
             'jenis'      => 'required|in_list[masuk,keluar]',
@@ -28,13 +30,16 @@ class Histori extends ResourceController
             'keterangan' => 'permit_empty|string',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
-        $id_barang = $this->request->getVar('id_barang');
-        $jenis     = $this->request->getVar('jenis');
-        $jumlah    = (int) $this->request->getVar('jumlah');
+        $id_barang = $input['id_barang'];
+        $jenis     = $input['jenis'];
+        $jumlah    = (int) $input['jumlah'];
 
         $barangModel = new BarangModel();
         $barang = $barangModel->find($id_barang);
@@ -55,7 +60,7 @@ class Histori extends ResourceController
             'id_barang'  => $id_barang,
             'jenis'      => $jenis,
             'jumlah'     => $jumlah,
-            'keterangan' => $this->request->getVar('keterangan'),
+            'keterangan' => $input['keterangan'] ?? null,
         ]);
 
         // Update stok barang otomatis
@@ -106,5 +111,25 @@ class Histori extends ResourceController
             'status'   => 200,
             'messages' => 'Histori berhasil dihapus dan stok barang telah disesuaikan kembali.'
         ]);
+    }
+
+    protected function getRequestInput()
+    {
+        $input = [];
+        $contentType = $this->request->getHeaderLine('Content-Type');
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawBody = $this->request->getBody();
+            if (!empty($rawBody)) {
+                $json = json_decode($rawBody, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                    $input = $json;
+                }
+            }
+        }
+        return array_merge(
+            $this->request->getGet() ?? [],
+            $this->request->getPost() ?? [],
+            $input
+        );
     }
 }

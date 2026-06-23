@@ -32,18 +32,23 @@ class Kategori extends ResourceController
 
     public function create()
     {
+        $input = $this->getRequestInput();
+
         $rules = [
             'nama_kategori' => 'required|min_length[3]|max_length[100]',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
         $model = new KategoriModel();
         $data  = [
-            'nama_kategori' => $this->request->getVar('nama_kategori'),
-            'deskripsi'     => $this->request->getVar('deskripsi'),
+            'nama_kategori' => $input['nama_kategori'] ?? '',
+            'deskripsi'     => $input['deskripsi'] ?? null,
         ];
 
         $model->insert($data);
@@ -62,17 +67,22 @@ class Kategori extends ResourceController
             return $this->failNotFound('Kategori tidak ditemukan.');
         }
 
+        $input = $this->getRequestInput();
+
         $rules = [
             'nama_kategori' => 'required|min_length[3]|max_length[100]',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
         $data  = [
-            'nama_kategori' => $this->request->getVar('nama_kategori'),
-            'deskripsi'     => $this->request->getVar('deskripsi'),
+            'nama_kategori' => $input['nama_kategori'] ?? '',
+            'deskripsi'     => $input['deskripsi'] ?? null,
         ];
 
         $model->update($id, $data);
@@ -97,5 +107,25 @@ class Kategori extends ResourceController
             'status'   => 200,
             'messages' => 'Kategori berhasil dihapus.'
         ]);
+    }
+
+    protected function getRequestInput()
+    {
+        $input = [];
+        $contentType = $this->request->getHeaderLine('Content-Type');
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawBody = $this->request->getBody();
+            if (!empty($rawBody)) {
+                $json = json_decode($rawBody, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                    $input = $json;
+                }
+            }
+        }
+        return array_merge(
+            $this->request->getGet() ?? [],
+            $this->request->getPost() ?? [],
+            $input
+        );
     }
 }
