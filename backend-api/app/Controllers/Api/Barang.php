@@ -97,15 +97,17 @@ class Barang extends ResourceController
             return $this->failNotFound('Barang tidak ditemukan.');
         }
 
-        // 🔥 JANGAN PAKAI getJSON DI SINI
-        $input = $this->request->getRawInput();
+        // 🔥 FORCE READ BODY MANUAL (INI KUNCI)
+        $rawBody = $this->request->getBody();
+        $input = json_decode($rawBody, true);
 
-        if (empty($input)) {
-            $input = $this->request->getJSON(true) ?? [];
+        // fallback kalau bukan JSON
+        if (json_last_error() !== JSON_ERROR_NONE || empty($input)) {
+            $input = $this->request->getRawInput();
         }
 
         if (empty($input)) {
-            return $this->fail('Input kosong atau tidak terbaca', 400);
+            return $this->fail('Request body kosong - tidak terbaca', 400);
         }
 
         $rules = [
@@ -127,7 +129,7 @@ class Barang extends ResourceController
             ]);
         }
 
-        $data = [
+        $model->update($id, [
             'nama_barang' => $input['nama_barang'],
             'id_kategori' => $input['id_kategori'],
             'id_supplier' => $input['id_supplier'],
@@ -135,9 +137,7 @@ class Barang extends ResourceController
             'harga' => $input['harga'],
             'satuan' => $input['satuan'],
             'deskripsi' => $input['deskripsi'] ?? null,
-        ];
-
-        $model->update($id, $data);
+        ]);
 
         return $this->respond([
             'status' => 200,
