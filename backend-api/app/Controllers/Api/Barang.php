@@ -15,14 +15,14 @@ class Barang extends ResourceController
 
         return $this->respond([
             'status' => 200,
-            'data' => $model->getBarangLengkap(),
+            'data'   => $model->getBarangLengkap(),
         ]);
     }
 
     public function show($id = null)
     {
         $model = new BarangModel();
-        $data = $model->find($id);
+        $data  = $model->find($id);
 
         if (!$data) {
             return $this->failNotFound('Barang tidak ditemukan.');
@@ -33,13 +33,46 @@ class Barang extends ResourceController
 
     public function create()
     {
-        return $this->respond([
-            'debug_raw_body' => file_get_contents('php://input'),
-            'debug_content_type' => $_SERVER['CONTENT_TYPE'] ?? 'TIDAK ADA',
-            'debug_method' => $_SERVER['REQUEST_METHOD'] ?? 'TIDAK ADA',
-            'debug_getBody' => (string) $this->request->getBody(),
+        $input = $this->getRequestInput();
+        $rules = $this->validationRules();
+
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
+        }
+
+        $idKategori = $input['id_kategori'];
+        $idSupplier = $input['id_supplier'];
+
+        $kategoriModel = new \App\Models\KategoriModel();
+        if (!$kategoriModel->find($idKategori)) {
+            return $this->fail('Kategori tidak ditemukan.', 400);
+        }
+
+        $supplierModel = new \App\Models\SupplierModel();
+        if (!$supplierModel->find($idSupplier)) {
+            return $this->fail('Supplier tidak ditemukan.', 400);
+        }
+
+        $model = new BarangModel();
+        $model->insert([
+            'nama_barang' => $input['nama_barang'],
+            'id_kategori' => $idKategori,
+            'id_supplier' => $idSupplier,
+            'stok'        => $input['stok'],
+            'harga'       => $input['harga'],
+            'satuan'      => $input['satuan'],
+            'deskripsi'   => $input['deskripsi'] ?? null,
+        ]);
+
+        return $this->respondCreated([
+            'status'   => 201,
+            'messages' => 'Barang berhasil ditambahkan.',
         ]);
     }
+
     public function update($id = null)
     {
         $model = new BarangModel();
@@ -76,14 +109,14 @@ class Barang extends ResourceController
                 'nama_barang' => $input['nama_barang'],
                 'id_kategori' => $input['id_kategori'],
                 'id_supplier' => $input['id_supplier'],
-                'stok' => $input['stok'],
-                'harga' => $input['harga'],
-                'satuan' => $input['satuan'],
-                'deskripsi' => $input['deskripsi'] ?? null,
+                'stok'        => $input['stok'],
+                'harga'       => $input['harga'],
+                'satuan'      => $input['satuan'],
+                'deskripsi'   => $input['deskripsi'] ?? null,
             ]);
         } catch (\Throwable $e) {
             log_message('error', 'Gagal update barang ID {id}: {message}', [
-                'id' => $id,
+                'id'      => $id,
                 'message' => $e->getMessage(),
             ]);
 
@@ -95,7 +128,7 @@ class Barang extends ResourceController
         }
 
         return $this->respond([
-            'status' => 200,
+            'status'   => 200,
             'messages' => 'Barang berhasil diubah.',
         ]);
     }
@@ -111,14 +144,14 @@ class Barang extends ResourceController
         $model->delete($id);
 
         return $this->respondDeleted([
-            'status' => 200,
+            'status'   => 200,
             'messages' => 'Barang berhasil dihapus.',
         ]);
     }
 
     protected function getRequestInput(): array
     {
-        $rawBody = trim((string) $this->request->getBody());
+        $rawBody = trim((string) file_get_contents('php://input'));
 
         if ($rawBody !== '') {
             $data = json_decode($rawBody, true);
@@ -151,9 +184,9 @@ class Barang extends ResourceController
             'nama_barang' => 'required|min_length[3]|max_length[100]',
             'id_kategori' => 'required|integer',
             'id_supplier' => 'required|integer',
-            'stok' => 'required|integer|greater_than_equal_to[0]',
-            'harga' => 'required|numeric|greater_than_equal_to[0]',
-            'satuan' => 'required|min_length[1]|max_length[20]',
+            'stok'        => 'required|integer|greater_than_equal_to[0]',
+            'harga'       => 'required|numeric|greater_than_equal_to[0]',
+            'satuan'      => 'required|min_length[1]|max_length[20]',
         ];
     }
 }
