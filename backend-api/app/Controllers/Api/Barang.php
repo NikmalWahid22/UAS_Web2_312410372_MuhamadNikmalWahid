@@ -2,8 +2,8 @@
 
 namespace App\Controllers\Api;
 
-use CodeIgniter\RESTful\ResourceController;
 use App\Models\BarangModel;
+use CodeIgniter\RESTful\ResourceController;
 
 class Barang extends ResourceController
 {
@@ -12,16 +12,17 @@ class Barang extends ResourceController
     public function index()
     {
         $model = new BarangModel();
+
         return $this->respond([
             'status' => 200,
-            'data' => $model->getBarangLengkap()
+            'data'   => $model->getBarangLengkap(),
         ]);
     }
 
     public function show($id = null)
     {
         $model = new BarangModel();
-        $data = $model->find($id);
+        $data  = $model->find($id);
 
         if (!$data) {
             return $this->failNotFound('Barang tidak ditemukan.');
@@ -33,59 +34,42 @@ class Barang extends ResourceController
     public function create()
     {
         $input = $this->getRequestInput();
-
-        $rules = [
-            'nama_barang' => 'required|min_length[3]|max_length[100]',
-            'id_kategori' => 'required|integer',
-            'id_supplier' => 'required|integer',
-            'stok' => 'required|integer|greater_than_equal_to[0]',
-            'harga' => 'required|numeric|greater_than_equal_to[0]',
-            'satuan' => 'required|min_length[1]|max_length[20]',
-        ];
+        $rules = $this->validationRules();
 
         $validation = \Config\Services::validation();
         $validation->setRules($rules);
 
         if (!$validation->run($input)) {
-            return $this->failValidationErrors([
-                'errors' => $validation->getErrors(),
-                'debug_input' => $input,
-                'debug_raw_body' => $this->request->getBody(),
-                'debug_content_type' => $this->request->getHeaderLine('Content-Type')
-            ]);
+            return $this->failValidationErrors($validation->getErrors());
         }
 
-        $id_kategori = $input['id_kategori'];
-        $id_supplier = $input['id_supplier'];
+        $idKategori = $input['id_kategori'];
+        $idSupplier = $input['id_supplier'];
 
-        // Check if category exists
         $kategoriModel = new \App\Models\KategoriModel();
-        if (!$kategoriModel->find($id_kategori)) {
+        if (!$kategoriModel->find($idKategori)) {
             return $this->fail('Kategori tidak ditemukan.', 400);
         }
 
-        // Check if supplier exists
         $supplierModel = new \App\Models\SupplierModel();
-        if (!$supplierModel->find($id_supplier)) {
+        if (!$supplierModel->find($idSupplier)) {
             return $this->fail('Supplier tidak ditemukan.', 400);
         }
 
         $model = new BarangModel();
-        $data = [
+        $model->insert([
             'nama_barang' => $input['nama_barang'],
-            'id_kategori' => $id_kategori,
-            'id_supplier' => $id_supplier,
-            'stok' => $input['stok'],
-            'harga' => $input['harga'],
-            'satuan' => $input['satuan'],
-            'deskripsi' => $input['deskripsi'] ?? null,
-        ];
-
-        $model->insert($data);
+            'id_kategori' => $idKategori,
+            'id_supplier' => $idSupplier,
+            'stok'        => $input['stok'],
+            'harga'       => $input['harga'],
+            'satuan'      => $input['satuan'],
+            'deskripsi'   => $input['deskripsi'] ?? null,
+        ]);
 
         return $this->respondCreated([
-            'status' => 201,
-            'messages' => 'Barang berhasil ditambahkan.'
+            'status'   => 201,
+            'messages' => 'Barang berhasil ditambahkan.',
         ]);
     }
 
@@ -97,49 +81,29 @@ class Barang extends ResourceController
             return $this->failNotFound('Barang tidak ditemukan.');
         }
 
-        // 🔥 FORCE READ BODY MANUAL (INI KUNCI)
-        $rawBody = $this->request->getBody();
-        $input = json_decode($rawBody, true);
-
-        // fallback kalau bukan JSON
-        if (json_last_error() !== JSON_ERROR_NONE || empty($input)) {
-            $input = $this->request->getRawInput();
-        }
+        $input = $this->getRequestInput();
 
         if (empty($input)) {
-            return $this->fail('Request body kosong - tidak terbaca', 400);
+            return $this->fail('Request body kosong atau format JSON tidak valid.', 400);
         }
 
-        $rules = [
-            'nama_barang' => 'required|min_length[3]|max_length[100]',
-            'id_kategori' => 'required|integer',
-            'id_supplier' => 'required|integer',
-            'stok' => 'required|integer|greater_than_equal_to[0]',
-            'harga' => 'required|numeric|greater_than_equal_to[0]',
-            'satuan' => 'required|min_length[1]|max_length[20]',
-        ];
-
-        if (!$this->validateData($input, $rules)) {
-            return $this->failValidationErrors([
-                'errors' => $this->validator->getErrors(),
-                'debug_input' => $input
-            ]);
+        if (!$this->validateData($input, $this->validationRules())) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
-
 
         $model->update($id, [
             'nama_barang' => $input['nama_barang'],
             'id_kategori' => $input['id_kategori'],
             'id_supplier' => $input['id_supplier'],
-            'stok' => $input['stok'],
-            'harga' => $input['harga'],
-            'satuan' => $input['satuan'],
-            'deskripsi' => $input['deskripsi'] ?? null,
+            'stok'        => $input['stok'],
+            'harga'       => $input['harga'],
+            'satuan'      => $input['satuan'],
+            'deskripsi'   => $input['deskripsi'] ?? null,
         ]);
 
         return $this->respond([
-            'status' => 200,
-            'messages' => 'Barang berhasil diubah.'
+            'status'   => 200,
+            'messages' => 'Barang berhasil diubah.',
         ]);
     }
 
@@ -154,12 +118,12 @@ class Barang extends ResourceController
         $model->delete($id);
 
         return $this->respondDeleted([
-            'status' => 200,
-            'messages' => 'Barang berhasil dihapus.'
+            'status'   => 200,
+            'messages' => 'Barang berhasil dihapus.',
         ]);
     }
 
-    protected function getRequestInput()
+    protected function getRequestInput(): array
     {
         $data = $this->request->getJSON(true);
 
@@ -172,7 +136,30 @@ class Barang extends ResourceController
             return $data;
         }
 
-        parse_str($this->request->getBody(), $output);
-        return $output ?? [];
+        $rawBody = trim((string) $this->request->getBody());
+
+        if ($rawBody === '') {
+            return [];
+        }
+
+        $data = json_decode($rawBody, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+            return $data;
+        }
+
+        parse_str($rawBody, $output);
+        return is_array($output) ? $output : [];
+    }
+
+    protected function validationRules(): array
+    {
+        return [
+            'nama_barang' => 'required|min_length[3]|max_length[100]',
+            'id_kategori' => 'required|integer',
+            'id_supplier' => 'required|integer',
+            'stok'        => 'required|integer|greater_than_equal_to[0]',
+            'harga'       => 'required|numeric|greater_than_equal_to[0]',
+            'satuan'      => 'required|min_length[1]|max_length[20]',
+        ];
     }
 }
