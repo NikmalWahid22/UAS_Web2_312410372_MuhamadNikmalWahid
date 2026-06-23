@@ -18,9 +18,7 @@ class BarangModel extends Model
         'deskripsi'
     ];
 
-    protected $useTimestamps = true;
-    protected $createdField  = 'created_at';
-    protected $updatedField  = '';
+    protected $useTimestamps = false;
 
     public function getBarangLengkap()
     {
