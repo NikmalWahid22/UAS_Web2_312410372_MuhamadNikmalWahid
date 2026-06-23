@@ -87,19 +87,45 @@ class Barang extends ResourceController
             return $this->fail('Request body kosong atau format JSON tidak valid.', 400);
         }
 
-        if (!$this->validateData($input, $this->validationRules())) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($this->validationRules());
+
+        if (!$validation->run($input)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
-        $model->update($id, [
-            'nama_barang' => $input['nama_barang'],
-            'id_kategori' => $input['id_kategori'],
-            'id_supplier' => $input['id_supplier'],
-            'stok'        => $input['stok'],
-            'harga'       => $input['harga'],
-            'satuan'      => $input['satuan'],
-            'deskripsi'   => $input['deskripsi'] ?? null,
-        ]);
+        $kategoriModel = new \App\Models\KategoriModel();
+        if (!$kategoriModel->find($input['id_kategori'])) {
+            return $this->fail('Kategori tidak ditemukan.', 400);
+        }
+
+        $supplierModel = new \App\Models\SupplierModel();
+        if (!$supplierModel->find($input['id_supplier'])) {
+            return $this->fail('Supplier tidak ditemukan.', 400);
+        }
+
+        try {
+            $updated = $model->update($id, [
+                'nama_barang' => $input['nama_barang'],
+                'id_kategori' => $input['id_kategori'],
+                'id_supplier' => $input['id_supplier'],
+                'stok'        => $input['stok'],
+                'harga'       => $input['harga'],
+                'satuan'      => $input['satuan'],
+                'deskripsi'   => $input['deskripsi'] ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Gagal update barang ID {id}: {message}', [
+                'id'      => $id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->failServerError('Gagal mengubah barang. Silakan cek log server.');
+        }
+
+        if (!$updated) {
+            return $this->fail('Barang gagal diubah.', 400);
+        }
 
         return $this->respond([
             'status'   => 200,
@@ -125,10 +151,13 @@ class Barang extends ResourceController
 
     protected function getRequestInput(): array
     {
-        $data = $this->request->getJSON(true);
+        $rawBody = trim((string) $this->request->getBody());
 
-        if (is_array($data)) {
-            return $data;
+        if ($rawBody !== '') {
+            $data = json_decode($rawBody, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                return $data;
+            }
         }
 
         $data = $this->request->getPost();
@@ -136,19 +165,17 @@ class Barang extends ResourceController
             return $data;
         }
 
-        $rawBody = trim((string) $this->request->getBody());
-
-        if ($rawBody === '') {
-            return [];
-        }
-
-        $data = json_decode($rawBody, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+        $data = $this->request->getRawInput();
+        if (!empty($data)) {
             return $data;
         }
 
-        parse_str($rawBody, $output);
-        return is_array($output) ? $output : [];
+        if ($rawBody !== '' && strpos($this->request->getHeaderLine('Content-Type'), 'application/json') === false) {
+            parse_str($rawBody, $output);
+            return is_array($output) ? $output : [];
+        }
+
+        return [];
     }
 
     protected function validationRules(): array
