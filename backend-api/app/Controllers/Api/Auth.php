@@ -14,21 +14,23 @@ class Auth extends ResourceController
         $username = '';
         $password = '';
 
-        // Coba baca sebagai JSON, kalau gagal baca sebagai form data
-        try {
-            $json = $this->request->getJSON(true);
-            if ($json && isset($json['username'])) {
-                $username = $json['username'];
-                $password = $json['password'] ?? '';
+        // Coba baca sebagai JSON dengan aman (cek header & raw body)
+        $contentType = $this->request->getHeaderLine('Content-Type');
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawBody = $this->request->getBody();
+            if (!empty($rawBody)) {
+                $json = json_decode($rawBody, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                    $username = $json['username'] ?? '';
+                    $password = $json['password'] ?? '';
+                }
             }
-        } catch (\Exception $e) {
-            // Bukan JSON, baca sebagai form data
         }
 
-        // Kalau username masih kosong, coba baca dari form data
+        // Kalau kosong atau bukan JSON, baca dari form/POST/GET (aman, tidak pernah throw exception)
         if (empty($username)) {
-            $username = $this->request->getVar('username') ?? '';
-            $password = $this->request->getVar('password') ?? '';
+            $username = $this->request->getPost('username') ?? $this->request->getGet('username') ?? '';
+            $password = $this->request->getPost('password') ?? $this->request->getGet('password') ?? '';
         }
 
         $model = new UserModel();
@@ -61,6 +63,39 @@ class Auth extends ResourceController
 
     public function register()
     {
+        $nama = '';
+        $username = '';
+        $useremail = '';
+        $userpassword = '';
+        $role = '';
+
+        // Coba baca sebagai JSON dengan aman
+        $contentType = $this->request->getHeaderLine('Content-Type');
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawBody = $this->request->getBody();
+            if (!empty($rawBody)) {
+                $json = json_decode($rawBody, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                    $nama = $json['nama'] ?? '';
+                    $username = $json['username'] ?? '';
+                    $useremail = $json['useremail'] ?? '';
+                    $userpassword = $json['userpassword'] ?? '';
+                    $role = $json['role'] ?? '';
+                }
+            }
+        }
+
+        // Fallback ke form/POST/GET jika kosong
+        if (empty($username)) {
+            $nama = $this->request->getPost('nama') ?? $this->request->getGet('nama') ?? '';
+            $username = $this->request->getPost('username') ?? $this->request->getGet('username') ?? '';
+            $useremail = $this->request->getPost('useremail') ?? $this->request->getGet('useremail') ?? '';
+            $userpassword = $this->request->getPost('userpassword') ?? $this->request->getGet('userpassword') ?? '';
+            $role = $this->request->getPost('role') ?? $this->request->getGet('role') ?? '';
+        }
+
+        $role = $role ?: 'staff_gudang';
+
         $rules = [
             'nama' => 'required|min_length[3]|max_length[100]',
             'username' => 'required|min_length[3]|max_length[50]|is_unique[users.username]',
@@ -69,23 +104,33 @@ class Auth extends ResourceController
             'role' => 'permit_empty|in_list[admin,staff_gudang]',
         ];
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        $data = [
+            'nama' => $nama,
+            'username' => $username,
+            'useremail' => $useremail,
+            'userpassword' => $userpassword,
+            'role' => $role,
+        ];
+
+        // Jalankan validasi menggunakan array data eksplisit agar tidak men-trigger getVar internal
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+
+        if (!$validation->run($data)) {
+            return $this->failValidationErrors($validation->getErrors());
         }
 
         $model = new UserModel();
 
-        $role = $this->request->getVar('role') ?: 'staff_gudang';
-
-        $data = [
-            'nama' => $this->request->getVar('nama'),
-            'username' => $this->request->getVar('username'),
-            'useremail' => $this->request->getVar('useremail'),
-            'userpassword' => password_hash($this->request->getVar('userpassword'), PASSWORD_DEFAULT),
+        $insertData = [
+            'nama' => $nama,
+            'username' => $username,
+            'useremail' => $useremail,
+            'userpassword' => password_hash($userpassword, PASSWORD_DEFAULT),
             'role' => $role,
         ];
 
-        $model->insert($data);
+        $model->insert($insertData);
 
         return $this->respondCreated([
             'status' => 201,

@@ -1,7 +1,7 @@
 const { createApp } = Vue;
 const { createRouter, createWebHashHistory } = VueRouter;
 const apiUrl = 'https://einventory-nikmal.up.railway.app';
-axios.defaults.baseURL = apiUrl; // Set base URL secara global untuk Axios
+// Set base URL secara global untuk Axios
 
 // =========================================================================
 // AXIOS INTERCEPTORS
