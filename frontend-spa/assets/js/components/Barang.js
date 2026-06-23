@@ -304,13 +304,9 @@ const Barang = {
                 deskripsi: this.form.deskripsi ?? ''
             };
 
-            const config = {
-                headers: { 'Content-Type': 'application/json' }
-            };
-
             const request = this.isEdit
-                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, payload, config)
-                : axios.post(apiUrl + '/api/barang', payload, config);
+                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, payload)
+                : axios.post(apiUrl + '/api/barang', payload);
 
             request
                 .then(() => {
