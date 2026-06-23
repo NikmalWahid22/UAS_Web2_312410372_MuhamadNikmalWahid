@@ -1,7 +1,6 @@
 const { createApp } = Vue;
 const { createRouter, createWebHashHistory } = VueRouter;
-
-const apiUrl = 'https://corsproxy.io/?https://einventory-nikmal.infinityfree.io/public';
+const apiUrl = 'https://einventory-nikmal.up.railway.app';
 axios.defaults.baseURL = apiUrl; // Set base URL secara global untuk Axios
 
 // =========================================================================

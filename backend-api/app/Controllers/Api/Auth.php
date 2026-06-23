@@ -11,33 +11,61 @@ class Auth extends ResourceController
 
     public function login()
     {
-        $username = $this->request->getVar('username');
+        $username = strtolower($this->request->getVar('username'));
         $password = $this->request->getVar('password');
 
-        $model = new UserModel();
-        $user  = $model->where('username', $username)
-                       ->orWhere('useremail', $username)
-                       ->first();
-
-        if ($user) {
-            if ($password === $user['userpassword'] ||
-                password_verify($password, $user['userpassword'])) {
-                return $this->respond([
-                    'status'   => 200,
-                    'error'    => null,
-                    'messages' => 'Login Berhasil',
-                    'data'     => [
-                        'id'       => $user['id'],
-                        'nama'     => $user['nama'],
-                        'username' => $user['username'],
-                        'role'     => $user['role'],
-                        'token'    => base64_encode("TOKEN-SECRET-" . $user['username'])
-                    ]
-                ], 200);
-            }
+        if (!$username || !$password) {
+            return $this->respond([
+                'status'   => 400,
+                'error'    => true,
+                'messages' => 'Username dan password wajib diisi'
+            ], 400);
         }
 
-        return $this->failUnauthorized('Username atau Password salah.');
+        $model = new UserModel();
+
+        $user = $model->groupStart()
+            ->where('username', $username)
+            ->orWhere('useremail', $username)
+            ->groupEnd()
+            ->first();
+
+        if (!$user) {
+            return $this->respond([
+                'status'   => 401,
+                'error'    => true,
+                'messages' => 'Username atau password salah'
+            ], 401);
+        }
+
+        // cek password (plain + hash support)
+        $isValidPassword =
+            ($password === $user['userpassword']) ||
+            password_verify($password, $user['userpassword']);
+
+        if (!$isValidPassword) {
+            return $this->respond([
+                'status'   => 401,
+                'error'    => true,
+                'messages' => 'Username atau password salah'
+            ], 401);
+        }
+
+        // TOKEN SIMPLE (sesuai permintaan kamu)
+        $token = base64_encode("TOKEN-SECRET-" . $user['username']);
+
+        return $this->respond([
+            'status'   => 200,
+            'error'    => null,
+            'messages' => 'Login berhasil',
+            'data'     => [
+                'id'       => $user['id'],
+                'nama'     => $user['nama'],
+                'username' => $user['username'],
+                'role'     => $user['role'],
+                'token'    => $token
+            ]
+        ], 200);
     }
 
     public function register()
@@ -51,16 +79,20 @@ class Auth extends ResourceController
         ];
 
         if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+            return $this->respond([
+                'status'   => 400,
+                'error'    => true,
+                'messages' => $this->validator->getErrors()
+            ], 400);
         }
 
         $model = new UserModel();
 
-        $role = $this->request->getVar('role') ?: 'staff_gudang';
+        $role = $this->request->getVar('role') ?? 'staff_gudang';
 
         $data = [
             'nama'         => $this->request->getVar('nama'),
-            'username'     => $this->request->getVar('username'),
+            'username'     => strtolower($this->request->getVar('username')),
             'useremail'    => $this->request->getVar('useremail'),
             'userpassword' => password_hash($this->request->getVar('userpassword'), PASSWORD_DEFAULT),
             'role'         => $role,
@@ -70,7 +102,8 @@ class Auth extends ResourceController
 
         return $this->respondCreated([
             'status'   => 201,
-            'messages' => 'Registrasi Berhasil. Silakan login.'
+            'error'    => null,
+            'messages' => 'Registrasi berhasil'
         ]);
     }
 }

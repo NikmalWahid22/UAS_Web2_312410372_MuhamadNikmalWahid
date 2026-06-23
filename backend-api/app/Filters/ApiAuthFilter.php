@@ -11,83 +11,80 @@ class ApiAuthFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Bypass GET and OPTIONS requests (public endpoints)
-        $method = strtolower($request->getMethod());
-        if ($method === 'get' || $method === 'options') {
+        // Allow preflight OPTIONS (WAJIB untuk CORS)
+        if ($request->getMethod() === 'options') {
             return;
         }
 
+        // GET tetap HARUS DI-SECURE kalau pakai filter
+        // jadi HAPUS bypass GET (ini bug di versi kamu)
+        
         $authHeader = $request->getServer('HTTP_AUTHORIZATION');
 
         if (!$authHeader) {
-            $response = Services::response();
-            $response->setStatusCode(401);
-            return $response->setJSON([
-                'status'   => 401,
-                'error'    => 401,
-                'messages' => 'Akses Ditolak. Token tidak ditemukan!'
-            ]);
+            return $this->unauthorized('Token tidak ditemukan!');
         }
 
-        $token = null;
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            $token = $matches[1];
+        // Ambil token Bearer
+        if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            return $this->unauthorized('Token tidak valid!');
         }
 
-        if (!$token || empty($token)) {
-            $response = Services::response();
-            $response->setStatusCode(401);
-            return $response->setJSON([
-                'status'   => 401,
-                'error'    => 401,
-                'messages' => 'Token tidak valid atau kedaluwarsa!'
-            ]);
+        $token = $matches[1];
+
+        if (empty($token)) {
+            return $this->unauthorized('Token tidak valid atau kosong!');
         }
 
-        // Decode and validate token
+        // Decode token
         $decoded = base64_decode($token, true);
+
         if ($decoded === false || strpos($decoded, "TOKEN-SECRET-") !== 0) {
-            $response = Services::response();
-            $response->setStatusCode(401);
-            return $response->setJSON([
-                'status'   => 401,
-                'error'    => 401,
-                'messages' => 'Token tidak valid atau kedaluwarsa!'
-            ]);
+            return $this->unauthorized('Token tidak valid atau kedaluwarsa!');
         }
 
         $username = str_replace("TOKEN-SECRET-", "", $decoded);
 
-        // Verify user exists in database
+        // Cek user di DB
         $userModel = new \App\Models\UserModel();
-        $user      = $userModel->where('username', $username)->first();
+        $user = $userModel->where('username', $username)->first();
 
         if (!$user) {
-            $response = Services::response();
-            $response->setStatusCode(401);
-            return $response->setJSON([
-                'status'   => 401,
-                'error'    => 401,
-                'messages' => 'Token tidak valid atau kedaluwarsa!'
-            ]);
+            return $this->unauthorized('User tidak ditemukan!');
         }
 
-        // Role check: If filter requires 'admin', check if user is admin
-        if ($arguments && in_array('admin', $arguments)) {
+        // ROLE CHECK
+        if (!empty($arguments) && in_array('admin', $arguments)) {
             if ($user['role'] !== 'admin') {
-                $response = Services::response();
-                $response->setStatusCode(403);
-                return $response->setJSON([
-                    'status'   => 403,
-                    'error'    => 403,
-                    'messages' => 'Akses Ditolak. Anda bukan Administrator!'
-                ]);
+                return $this->forbidden('Akses ditolak. Bukan admin!');
             }
         }
+
+        // OPTIONAL: inject user ke request (biar controller bisa pakai)
+        $request->setHeader('X-User-Id', $user['id']);
+        $request->setHeader('X-User-Role', $user['role']);
+    }
+
+    private function unauthorized($message)
+    {
+        $response = Services::response();
+        return $response->setStatusCode(401)->setJSON([
+            'status' => 401,
+            'message' => $message
+        ]);
+    }
+
+    private function forbidden($message)
+    {
+        $response = Services::response();
+        return $response->setStatusCode(403)->setJSON([
+            'status' => 403,
+            'message' => $message
+        ]);
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Tidak diperlukan
+        // tidak dipakai
     }
 }
