@@ -122,7 +122,7 @@ class Supplier extends ResourceController
         $input = [];
         $contentType = $this->request->getHeaderLine('Content-Type');
         if (strpos($contentType, 'application/json') !== false) {
-            $rawBody = $this->request->getBody();
+            $rawBody = file_get_contents('php://input');
             if (!empty($rawBody)) {
                 $json = json_decode($rawBody, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
