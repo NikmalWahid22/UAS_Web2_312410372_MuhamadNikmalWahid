@@ -291,12 +291,25 @@ const Barang = {
                 return;
             }
 
-            console.log('DATA DIKIRIM', this.form);
-            
             this.loadingSave = true;
+
+            // Kirim sebagai form data
+            const params = new URLSearchParams();
+            params.append('nama_barang', this.form.nama_barang);
+            params.append('id_kategori', this.form.id_kategori);
+            params.append('id_supplier', this.form.id_supplier);
+            params.append('stok', this.form.stok);
+            params.append('harga', this.form.harga);
+            params.append('satuan', this.form.satuan);
+            params.append('deskripsi', this.form.deskripsi ?? '');
+
+            const config = {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            };
+
             const request = this.isEdit
-                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, this.form)
-                : axios.post(apiUrl + '/api/barang', this.form);
+                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, params, config)
+                : axios.post(apiUrl + '/api/barang', params, config);
 
             request
                 .then(() => {
@@ -304,14 +317,9 @@ const Barang = {
                     this.loadData();
                 })
                 .catch(err => {
-                    console.log('ERROR', err.response);
-                    console.log('DATA ERROR', err.response?.data);
-
-                    this.errorMsg = JSON.stringify(
-                        err.response?.data,
-                        null,
-                        2
-                    );
+                    this.errorMsg = err.response?.data?.messages?.errors
+                        ? Object.values(err.response.data.messages.errors).join(', ')
+                        : 'Gagal menyimpan data.';
                 })
                 .finally(() => {
                     this.loadingSave = false;
