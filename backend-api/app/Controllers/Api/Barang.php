@@ -14,14 +14,14 @@ class Barang extends ResourceController
         $model = new BarangModel();
         return $this->respond([
             'status' => 200,
-            'data'   => $model->getBarangLengkap()
+            'data' => $model->getBarangLengkap()
         ]);
     }
 
     public function show($id = null)
     {
         $model = new BarangModel();
-        $data  = $model->find($id);
+        $data = $model->find($id);
 
         if (!$data) {
             return $this->failNotFound('Barang tidak ditemukan.');
@@ -35,12 +35,12 @@ class Barang extends ResourceController
         $input = $this->getRequestInput();
 
         $rules = [
-            'nama_barang'  => 'required|min_length[3]|max_length[100]',
-            'id_kategori'  => 'required|integer',
-            'id_supplier'  => 'required|integer',
-            'stok'         => 'required|integer|greater_than_equal_to[0]',
-            'harga'        => 'required|numeric|greater_than_equal_to[0]',
-            'satuan'       => 'required|min_length[1]|max_length[20]',
+            'nama_barang' => 'required|min_length[3]|max_length[100]',
+            'id_kategori' => 'required|integer',
+            'id_supplier' => 'required|integer',
+            'stok' => 'required|integer|greater_than_equal_to[0]',
+            'harga' => 'required|numeric|greater_than_equal_to[0]',
+            'satuan' => 'required|min_length[1]|max_length[20]',
         ];
 
         $validation = \Config\Services::validation();
@@ -71,20 +71,20 @@ class Barang extends ResourceController
         }
 
         $model = new BarangModel();
-        $data  = [
-            'nama_barang'  => $input['nama_barang'],
-            'id_kategori'  => $id_kategori,
-            'id_supplier'  => $id_supplier,
-            'stok'         => $input['stok'],
-            'harga'        => $input['harga'],
-            'satuan'       => $input['satuan'],
-            'deskripsi'    => $input['deskripsi'] ?? null,
+        $data = [
+            'nama_barang' => $input['nama_barang'],
+            'id_kategori' => $id_kategori,
+            'id_supplier' => $id_supplier,
+            'stok' => $input['stok'],
+            'harga' => $input['harga'],
+            'satuan' => $input['satuan'],
+            'deskripsi' => $input['deskripsi'] ?? null,
         ];
 
         $model->insert($data);
 
         return $this->respondCreated([
-            'status'   => 201,
+            'status' => 201,
             'messages' => 'Barang berhasil ditambahkan.'
         ]);
     }
@@ -100,12 +100,12 @@ class Barang extends ResourceController
         $input = $this->getRequestInput();
 
         $rules = [
-            'nama_barang'  => 'required|min_length[3]|max_length[100]',
-            'id_kategori'  => 'required|integer',
-            'id_supplier'  => 'required|integer',
-            'stok'         => 'required|integer|greater_than_equal_to[0]',
-            'harga'        => 'required|numeric|greater_than_equal_to[0]',
-            'satuan'       => 'required|min_length[1]|max_length[20]',
+            'nama_barang' => 'required|min_length[3]|max_length[100]',
+            'id_kategori' => 'required|integer',
+            'id_supplier' => 'required|integer',
+            'stok' => 'required|integer|greater_than_equal_to[0]',
+            'harga' => 'required|numeric|greater_than_equal_to[0]',
+            'satuan' => 'required|min_length[1]|max_length[20]',
         ];
 
         $validation = \Config\Services::validation();
@@ -135,20 +135,20 @@ class Barang extends ResourceController
             return $this->fail('Supplier tidak ditemukan.', 400);
         }
 
-        $data  = [
-            'nama_barang'  => $input['nama_barang'],
-            'id_kategori'  => $id_kategori,
-            'id_supplier'  => $id_supplier,
-            'stok'         => $input['stok'],
-            'harga'        => $input['harga'],
-            'satuan'       => $input['satuan'],
-            'deskripsi'    => $input['deskripsi'] ?? null,
+        $data = [
+            'nama_barang' => $input['nama_barang'],
+            'id_kategori' => $id_kategori,
+            'id_supplier' => $id_supplier,
+            'stok' => $input['stok'],
+            'harga' => $input['harga'],
+            'satuan' => $input['satuan'],
+            'deskripsi' => $input['deskripsi'] ?? null,
         ];
 
         $model->update($id, $data);
 
         return $this->respond([
-            'status'   => 200,
+            'status' => 200,
             'messages' => 'Barang berhasil diubah.'
         ]);
     }
@@ -164,28 +164,19 @@ class Barang extends ResourceController
         $model->delete($id);
 
         return $this->respondDeleted([
-            'status'   => 200,
+            'status' => 200,
             'messages' => 'Barang berhasil dihapus.'
         ]);
     }
 
     protected function getRequestInput()
     {
-        $input = [];
-        $contentType = $this->request->getHeaderLine('Content-Type');
-        if (strpos($contentType, 'application/json') !== false) {
-            $rawBody = $this->request->getBody();
-            if (!empty($rawBody)) {
-                $json = json_decode($rawBody, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
-                    $input = $json;
-                }
-            }
+        $json = $this->request->getJSON(true);
+
+        if (is_array($json)) {
+            return $json;
         }
-        return array_merge(
-            $this->request->getGet() ?? [],
-            $this->request->getPost() ?? [],
-            $input
-        );
+
+        return $this->request->getPost();
     }
 }
