@@ -11,12 +11,12 @@ class Auth extends ResourceController
 
     public function login()
     {
-        // Coba baca dari JSON dulu, kalau gagal baca dari form data
-        $json = $this->request->getJSON();
+        // Tambah parameter true biar tidak throw exception kalau bukan JSON
+        $json = $this->request->getJSON(true);
 
-        if ($json) {
-            $username = $json->username ?? '';
-            $password = $json->password ?? '';
+        if ($json && isset($json['username'])) {
+            $username = $json['username'];
+            $password = $json['password'];
         } else {
             $username = $this->request->getVar('username');
             $password = $this->request->getVar('password');
