@@ -294,14 +294,15 @@ const Barang = {
             this.loadingSave = true;
 
             // Kirim sebagai form data
-            const params = new URLSearchParams();
-            params.append('nama_barang', this.form.nama_barang);
-            params.append('id_kategori', this.form.id_kategori);
-            params.append('id_supplier', this.form.id_supplier);
-            params.append('stok', this.form.stok);
-            params.append('harga', this.form.harga);
-            params.append('satuan', this.form.satuan);
-            params.append('deskripsi', this.form.deskripsi ?? '');
+            const payload = {
+                nama_barang: this.form.nama_barang,
+                id_kategori: this.form.id_kategori,
+                id_supplier: this.form.id_supplier,
+                stok: this.form.stok,
+                harga: this.form.harga,
+                satuan: this.form.satuan,
+                deskripsi: this.form.deskripsi ?? ''
+            };
 
             const config = {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
