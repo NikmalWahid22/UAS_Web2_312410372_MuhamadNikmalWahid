@@ -220,25 +220,25 @@ const Barang = {
     `,
     data() {
         return {
-            barangList   : [],
-            kategoriList : [],
-            supplierList : [],
-            search       : '',
-            loading      : false,
-            loadingSave  : false,
-            showModal    : false,
-            isEdit       : false,
-            errorMsg     : '',
-            userRole     : localStorage.getItem('userRole') ?? 'staff',
-            form         : {
-                id_barang   : null,
-                nama_barang : '',
-                id_kategori : '',
-                id_supplier : '',
-                stok        : 0,
-                harga       : 0,
-                satuan      : '',
-                deskripsi   : ''
+            barangList: [],
+            kategoriList: [],
+            supplierList: [],
+            search: '',
+            loading: false,
+            loadingSave: false,
+            showModal: false,
+            isEdit: false,
+            errorMsg: '',
+            userRole: localStorage.getItem('userRole') ?? 'staff',
+            form: {
+                id_barang: null,
+                nama_barang: '',
+                id_kategori: '',
+                id_supplier: '',
+                stok: 0,
+                harga: 0,
+                satuan: '',
+                deskripsi: ''
             }
         }
     },
@@ -258,38 +258,41 @@ const Barang = {
             this.loading = true;
             axios.get(apiUrl + '/api/barang')
                 .then(res => { this.barangList = res.data.data; })
-                .catch(() => {})
+                .catch(() => { })
                 .finally(() => { this.loading = false; });
 
             axios.get(apiUrl + '/api/kategori')
                 .then(res => { this.kategoriList = res.data.data; })
-                .catch(() => {});
+                .catch(() => { });
 
             axios.get(apiUrl + '/api/supplier')
                 .then(res => { this.supplierList = res.data.data; })
-                .catch(() => {});
+                .catch(() => { });
         },
         openTambah() {
-            this.isEdit   = false;
+            this.isEdit = false;
             this.errorMsg = '';
-            this.form     = { id_barang: null, nama_barang: '', id_kategori: '', id_supplier: '', stok: 0, harga: 0, satuan: '', deskripsi: '' };
+            this.form = { id_barang: null, nama_barang: '', id_kategori: '', id_supplier: '', stok: 0, harga: 0, satuan: '', deskripsi: '' };
             this.showModal = true;
         },
         openEdit(item) {
-            this.isEdit    = true;
-            this.errorMsg  = '';
-            this.form      = { ...item };
+            this.isEdit = true;
+            this.errorMsg = '';
+            this.form = { ...item };
             this.showModal = true;
         },
         closeModal() {
             this.showModal = false;
-            this.errorMsg  = '';
+            this.errorMsg = '';
         },
         simpan() {
             if (!this.form.nama_barang) {
                 this.errorMsg = 'Nama barang wajib diisi!';
                 return;
             }
+
+            console.log('DATA DIKIRIM', this.form);
+            
             this.loadingSave = true;
             const request = this.isEdit
                 ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, this.form)
@@ -300,8 +303,19 @@ const Barang = {
                     this.closeModal();
                     this.loadData();
                 })
-                .catch(() => { this.errorMsg = 'Gagal menyimpan data. Coba lagi.'; })
-                .finally(() => { this.loadingSave = false; });
+                .catch(err => {
+                    console.log('ERROR', err.response);
+                    console.log('DATA ERROR', err.response?.data);
+
+                    this.errorMsg = JSON.stringify(
+                        err.response?.data,
+                        null,
+                        2
+                    );
+                })
+                .finally(() => {
+                    this.loadingSave = false;
+                });
         },
         hapus(id) {
             if (confirm('Yakin ingin menghapus barang ini?')) {
