@@ -11,61 +11,41 @@ class Auth extends ResourceController
 
     public function login()
     {
-        $username = strtolower($this->request->getVar('username'));
-        $password = $this->request->getVar('password');
+        // Coba baca dari JSON dulu, kalau gagal baca dari form data
+        $json = $this->request->getJSON();
 
-        if (!$username || !$password) {
-            return $this->respond([
-                'status'   => 400,
-                'error'    => true,
-                'messages' => 'Username dan password wajib diisi'
-            ], 400);
+        if ($json) {
+            $username = $json->username ?? '';
+            $password = $json->password ?? '';
+        } else {
+            $username = $this->request->getVar('username');
+            $password = $this->request->getVar('password');
         }
 
         $model = new UserModel();
+        $user  = $model->where('username', $username)
+                    ->orWhere('useremail', $username)
+                    ->first();
 
-        $user = $model->groupStart()
-            ->where('username', $username)
-            ->orWhere('useremail', $username)
-            ->groupEnd()
-            ->first();
-
-        if (!$user) {
-            return $this->respond([
-                'status'   => 401,
-                'error'    => true,
-                'messages' => 'Username atau password salah'
-            ], 401);
+        if ($user) {
+            if ($password === $user['userpassword'] ||
+                password_verify($password, $user['userpassword'])) {
+                return $this->respond([
+                    'status'   => 200,
+                    'error'    => null,
+                    'messages' => 'Login Berhasil',
+                    'data'     => [
+                        'id'       => $user['id'],
+                        'nama'     => $user['nama'],
+                        'username' => $user['username'],
+                        'role'     => $user['role'],
+                        'token'    => base64_encode("TOKEN-SECRET-" . $user['username'])
+                    ]
+                ], 200);
+            }
         }
 
-        // cek password (plain + hash support)
-        $isValidPassword =
-            ($password === $user['userpassword']) ||
-            password_verify($password, $user['userpassword']);
-
-        if (!$isValidPassword) {
-            return $this->respond([
-                'status'   => 401,
-                'error'    => true,
-                'messages' => 'Username atau password salah'
-            ], 401);
-        }
-
-        // TOKEN SIMPLE (sesuai permintaan kamu)
-        $token = base64_encode("TOKEN-SECRET-" . $user['username']);
-
-        return $this->respond([
-            'status'   => 200,
-            'error'    => null,
-            'messages' => 'Login berhasil',
-            'data'     => [
-                'id'       => $user['id'],
-                'nama'     => $user['nama'],
-                'username' => $user['username'],
-                'role'     => $user['role'],
-                'token'    => $token
-            ]
-        ], 200);
+        return $this->failUnauthorized('Username atau Password salah.');
     }
 
     public function register()
@@ -79,20 +59,16 @@ class Auth extends ResourceController
         ];
 
         if (!$this->validate($rules)) {
-            return $this->respond([
-                'status'   => 400,
-                'error'    => true,
-                'messages' => $this->validator->getErrors()
-            ], 400);
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
         $model = new UserModel();
 
-        $role = $this->request->getVar('role') ?? 'staff_gudang';
+        $role = $this->request->getVar('role') ?: 'staff_gudang';
 
         $data = [
             'nama'         => $this->request->getVar('nama'),
-            'username'     => strtolower($this->request->getVar('username')),
+            'username'     => $this->request->getVar('username'),
             'useremail'    => $this->request->getVar('useremail'),
             'userpassword' => password_hash($this->request->getVar('userpassword'), PASSWORD_DEFAULT),
             'role'         => $role,
@@ -102,8 +78,7 @@ class Auth extends ResourceController
 
         return $this->respondCreated([
             'status'   => 201,
-            'error'    => null,
-            'messages' => 'Registrasi berhasil'
+            'messages' => 'Registrasi Berhasil. Silakan login.'
         ]);
     }
 }
