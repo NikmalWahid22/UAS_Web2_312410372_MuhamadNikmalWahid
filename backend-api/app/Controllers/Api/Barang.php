@@ -97,7 +97,16 @@ class Barang extends ResourceController
             return $this->failNotFound('Barang tidak ditemukan.');
         }
 
-        $input = $this->getRequestInput();
+        // 🔥 JANGAN PAKAI getJSON DI SINI
+        $input = $this->request->getRawInput();
+
+        if (empty($input)) {
+            $input = $this->request->getJSON(true) ?? [];
+        }
+
+        if (empty($input)) {
+            return $this->fail('Input kosong atau tidak terbaca', 400);
+        }
 
         $rules = [
             'nama_barang' => 'required|min_length[3]|max_length[100]',
@@ -114,31 +123,14 @@ class Barang extends ResourceController
         if (!$validation->run($input)) {
             return $this->failValidationErrors([
                 'errors' => $validation->getErrors(),
-                'debug_input' => $input,
-                'debug_raw_body' => $this->request->getBody(),
-                'debug_content_type' => $this->request->getHeaderLine('Content-Type')
+                'debug_input' => $input
             ]);
-        }
-
-        $id_kategori = $input['id_kategori'];
-        $id_supplier = $input['id_supplier'];
-
-        // Check if category exists
-        $kategoriModel = new \App\Models\KategoriModel();
-        if (!$kategoriModel->find($id_kategori)) {
-            return $this->fail('Kategori tidak ditemukan.', 400);
-        }
-
-        // Check if supplier exists
-        $supplierModel = new \App\Models\SupplierModel();
-        if (!$supplierModel->find($id_supplier)) {
-            return $this->fail('Supplier tidak ditemukan.', 400);
         }
 
         $data = [
             'nama_barang' => $input['nama_barang'],
-            'id_kategori' => $id_kategori,
-            'id_supplier' => $id_supplier,
+            'id_kategori' => $input['id_kategori'],
+            'id_supplier' => $input['id_supplier'],
             'stok' => $input['stok'],
             'harga' => $input['harga'],
             'satuan' => $input['satuan'],
