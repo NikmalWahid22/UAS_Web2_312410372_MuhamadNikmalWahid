@@ -171,12 +171,35 @@ class Barang extends ResourceController
 
     protected function getRequestInput()
     {
-        $json = $this->request->getJSON(true);
+        // Coba baca JSON dulu dengan try-catch
+        try {
+            $contentType = $this->request->getHeaderLine('Content-Type');
 
-        if (is_array($json)) {
-            return $json;
+            if (strpos($contentType, 'application/json') !== false) {
+                $json = $this->request->getJSON(true);
+                if (is_array($json) && !empty($json)) {
+                    return $json;
+                }
+            }
+        } catch (\Exception $e) {
+            // Bukan JSON valid, lanjut baca form data
         }
 
-        return $this->request->getPost();
+        // Baca dari POST/PUT form data
+        $post = $this->request->getPost();
+        if (!empty($post)) {
+            return $post;
+        }
+
+        // Baca dari raw body (untuk PUT request)
+        $raw = $this->request->getBody();
+        if (!empty($raw)) {
+            parse_str($raw, $parsed);
+            if (!empty($parsed)) {
+                return $parsed;
+            }
+        }
+
+        return [];
     }
 }
