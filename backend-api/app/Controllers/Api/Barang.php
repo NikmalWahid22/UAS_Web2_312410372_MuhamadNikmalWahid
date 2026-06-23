@@ -47,7 +47,12 @@ class Barang extends ResourceController
         $validation->setRules($rules);
 
         if (!$validation->run($input)) {
-            return $this->failValidationErrors($validation->getErrors());
+            return $this->failValidationErrors([
+                'errors' => $validation->getErrors(),
+                'debug_input' => $input,
+                'debug_raw_body' => $this->request->getBody(),
+                'debug_content_type' => $this->request->getHeaderLine('Content-Type')
+            ]);
         }
 
         $id_kategori = $input['id_kategori'];
@@ -107,7 +112,12 @@ class Barang extends ResourceController
         $validation->setRules($rules);
 
         if (!$validation->run($input)) {
-            return $this->failValidationErrors($validation->getErrors());
+            return $this->failValidationErrors([
+                'errors' => $validation->getErrors(),
+                'debug_input' => $input,
+                'debug_raw_body' => $this->request->getBody(),
+                'debug_content_type' => $this->request->getHeaderLine('Content-Type')
+            ]);
         }
 
         $id_kategori = $input['id_kategori'];
