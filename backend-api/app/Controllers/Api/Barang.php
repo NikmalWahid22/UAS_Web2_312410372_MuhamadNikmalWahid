@@ -119,15 +119,13 @@ class Barang extends ResourceController
             'satuan' => 'required|min_length[1]|max_length[20]',
         ];
 
-        $validation = \Config\Services::validation();
-        $validation->setRules($rules);
-
-        if (!$validation->run($input)) {
+        if (!$this->validateData($input, $rules)) {
             return $this->failValidationErrors([
-                'errors' => $validation->getErrors(),
+                'errors' => $this->validator->getErrors(),
                 'debug_input' => $input
             ]);
         }
+
 
         $model->update($id, [
             'nama_barang' => $input['nama_barang'],
