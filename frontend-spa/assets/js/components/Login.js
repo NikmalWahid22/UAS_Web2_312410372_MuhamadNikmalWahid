@@ -91,42 +91,48 @@ const Login = {
     `,
     data() {
         return {
-            username     : '',
-            password     : '',
-            errorMessage : '',
-            loading      : false
+            username: '',
+            password: '',
+            errorMessage: '',
+            loading: false
         }
     },
     methods: {
         handleLogin() {
-            this.loading      = true;
+            this.loading = true;
             this.errorMessage = '';
 
-            axios.post(apiUrl + '/api/login', {
-                username: this.username,
-                password: this.password
-            })
-            .then(response => {
-                if (response.data.status === 200) {
-                    const data = response.data.data;
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('userToken',  data.token);
-                    localStorage.setItem('userName',   data.nama);
-                    localStorage.setItem('userRole',   data.role);
-                    this.$router.push('/dashboard');
-                    window.location.reload();
+            // Kirim sebagai form data bukan JSON
+            const params = new URLSearchParams();
+            params.append('username', this.username);
+            params.append('password', this.password);
+
+            axios.post(apiUrl + '/api/login', params, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             })
-            .catch(error => {
-                if (error.response && error.response.data.messages) {
-                    this.errorMessage = error.response.data.messages;
-                } else {
-                    this.errorMessage = 'Terjadi kesalahan jaringan atau server.';
-                }
-            })
-            .finally(() => {
-                this.loading = false;
-            });
+                .then(response => {
+                    if (response.data.status === 200) {
+                        const data = response.data.data;
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userToken', data.token);
+                        localStorage.setItem('userName', data.nama);
+                        localStorage.setItem('userRole', data.role);
+                        this.$router.push('/dashboard');
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    if (error.response && error.response.data.messages) {
+                        this.errorMessage = error.response.data.messages;
+                    } else {
+                        this.errorMessage = 'Terjadi kesalahan jaringan atau server.';
+                    }
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
         }
     }
 };
