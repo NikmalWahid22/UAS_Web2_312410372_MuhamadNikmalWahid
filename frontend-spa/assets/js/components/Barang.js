@@ -305,12 +305,12 @@ const Barang = {
             };
 
             const config = {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                headers: { 'Content-Type': 'application/json' }
             };
 
             const request = this.isEdit
-                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, params, config)
-                : axios.post(apiUrl + '/api/barang', params, config);
+                ? axios.put(apiUrl + '/api/barang/' + this.form.id_barang, payload, config)
+                : axios.post(apiUrl + '/api/barang', payload, config);
 
             request
                 .then(() => {
