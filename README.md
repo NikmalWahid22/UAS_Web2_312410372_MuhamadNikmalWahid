@@ -262,7 +262,7 @@ UAS_Web2_NIM_Nama/
 | | Link |
 |--|------|
 |  **Video Presentasi** | [YouTube — Coming Soon](#) |
-|  **Repository GitHub** | [GitHub — Coming Soon](#) |
+|  **Demo APlikasi** | [einventory-nikmal.vercel.app](#) |
 
 ---
 
