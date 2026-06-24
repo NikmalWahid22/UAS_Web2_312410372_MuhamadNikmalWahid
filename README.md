@@ -262,7 +262,7 @@ UAS_Web2_NIM_Nama/
 | | Link |
 |--|------|
 |  **Video Presentasi** | [YouTube — Coming Soon](#) |
-|  **Demo APlikasi** | [Link Demo](einventory-nikmal.vercel.app) |
+|  **Demo APlikasi** | [Link Demo](https://einventory-nikmal.vercel.app/#/) |
 
 ---
 
