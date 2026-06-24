@@ -47,7 +47,7 @@ Endpoint manipulasi data (POST, PUT, DELETE) diproteksi menggunakan **Token-Base
 
 ### Bukti Pengujian via Postman
 
-![401 Unauthorized Postman](screenshots/postman-401.png)
+![Gambar 1](Pict/endpoint.png)
 
 **Endpoint yang diproteksi (wajib token):**
 - `POST /api/barang`, `PUT /api/barang/:id`, `DELETE /api/barang/:id`
@@ -66,22 +66,24 @@ Endpoint manipulasi data (POST, PUT, DELETE) diproteksi menggunakan **Token-Base
 ### Halaman Beranda (Public)
 Dapat diakses tanpa login. Menampilkan hero section, statistik total data, dan tabel daftar barang.
 
-![Halaman Beranda](screenshots/home.png)
+![Gambar 2](Pict/public1.png)
+
+![Gambar 3](Pict/public2.png)
 
 ### Halaman Login
 Form autentikasi untuk masuk ke panel admin.
 
-![Halaman Login](screenshots/login.png)
+![Gambar 4](Pict/login.png)
 
 ### Dashboard Admin
 Menampilkan ringkasan statistik, barang dengan stok rendah, dan aktivitas terbaru.
 
-![Dashboard Admin](screenshots/dashboard.png)
+![Gambar 5](Pict/dashboard.png)
 
 ### Halaman Data Barang
 Tabel data barang dengan fitur pencarian dan indikator warna stok.
 
-![Data Barang](screenshots/barang.png)
+![Gambar 6](Pict/databarang.png)
 
 ### Modal Tambah / Edit Data
 Form input interaktif dalam modal box untuk menambah dan mengedit data.
@@ -90,16 +92,16 @@ Form input interaktif dalam modal box untuk menambah dan mengedit data.
 
 ### Halaman Kategori
 
-![Kategori](screenshots/kategori.png)
+![Gambar 7](Pict/kategori.png)
 
 ### Halaman Supplier
 
-![Supplier](screenshots/supplier.png)
+![Gambar 8](Pict/supplier.png)
 
 ### Halaman Histori Barang
 Mencatat pergerakan barang masuk/keluar dengan pembaruan stok otomatis.
 
-![Histori Barang](screenshots/histori.png)
+![Gambar 9](Pict/histori.png)
 
 ---
 
