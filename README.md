@@ -37,8 +37,7 @@ users (autentikasi login)
 
 ### Screenshot Skema Database (phpMyAdmin Designer)
 
-![Skema Relasi Database](Pict/db
-.png)
+![Skema Relasi Database](Pict/db.png)
 
 ---
 
