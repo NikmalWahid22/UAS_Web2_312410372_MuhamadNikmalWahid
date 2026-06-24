@@ -88,7 +88,7 @@ Tabel data barang dengan fitur pencarian dan indikator warna stok.
 ### Modal Tambah / Edit Data
 Form input interaktif dalam modal box untuk menambah dan mengedit data.
 
-![Modal Tambah Barang](screenshots/modal-tambah.png)
+![Modal Tamba Barang](Pict/modaltambah.png)
 
 ### Halaman Kategori
 
